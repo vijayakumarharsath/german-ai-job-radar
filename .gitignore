@@ -1,0 +1,12 @@
+jobs.db
+output/
+saved_pages/
+__pycache__/
+*.pyc
+.env
+.venv/
+
+# personal planning notes (not part of the public repo)
+tonight_prep.md
+build_in_public_kit.md
+learning_cert_roadmap.md

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>German AI Job Radar</title>
+<style>
+  :root{
+    --bg:#0d1220; --panel:#151c2e; --panel2:#1b2438; --line:#253048;
+    --txt:#e8ecf6; --mut:#8b96ad; --acc:#7c6cf0; --acc2:#2ee6a8;
+    --warn:#ffb454; --bad:#ff6b7a; --ger:#ff6b7a;
+  }
+  *{box-sizing:border-box; margin:0}
+  body{background:var(--bg); color:var(--txt);
+    font:15px/1.5 -apple-system,"Segoe UI",Roboto,Inter,sans-serif; padding-bottom:60px}
+  header{display:flex; align-items:center; gap:14px; padding:18px 28px;
+    border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(13,18,32,.92);
+    backdrop-filter:blur(6px); z-index:20}
+  h1{font-size:19px; font-weight:700}
+  h1 span{color:var(--acc)}
+  .pill{font-size:12px; padding:3px 11px; border-radius:99px; border:1px solid var(--line); color:var(--mut)}
+  .pill.on{color:var(--acc2); border-color:var(--acc2)}
+  .pill.busy{color:var(--warn); border-color:var(--warn); animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{opacity:.5}}
+  nav{display:flex; gap:8px; padding:14px 28px; flex-wrap:wrap}
+  .step{cursor:pointer; padding:7px 14px; border-radius:10px; border:1px solid var(--line);
+    color:var(--mut); font-size:13.5px; user-select:none}
+  .step:hover{border-color:var(--acc)}
+  .step.active{background:var(--acc); border-color:var(--acc); color:#fff}
+  .step.done{color:var(--acc2); border-color:var(--acc2)}
+  main{padding:20px 28px; max-width:1200px}
+  section{display:none} section.show{display:block; animation:fade .25s}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px}
+  .card h3{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--mut); margin-bottom:12px}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{cursor:pointer; padding:6px 13px; border-radius:9px; border:1px solid var(--line);
+    font-size:13.5px; color:var(--mut); user-select:none}
+  .chip.sel{background:rgba(124,108,240,.16); border-color:var(--acc); color:var(--txt)}
+  label{font-size:13px; color:var(--mut); display:block; margin:10px 0 5px}
+  textarea,input[type=text],input[type=number],select{width:100%; background:var(--panel2);
+    border:1px solid var(--line); color:var(--txt); border-radius:9px; padding:8px 11px;
+    font:13.5px/1.5 inherit}
+  textarea{min-height:84px; resize:vertical}
+  .row{display:flex; gap:12px} .row>*{flex:1}
+  button{cursor:pointer; border:0; border-radius:10px; padding:10px 20px; font-weight:600;
+    font-size:14px; background:var(--acc); color:#fff}
+  button:hover{filter:brightness(1.12)}
+  button.ghost{background:transparent; border:1px solid var(--line); color:var(--mut)}
+  button.go{background:var(--acc2); color:#08281c}
+  .console{background:#0a0e18; border:1px solid var(--line); border-radius:12px; padding:14px;
+    font:12.5px/1.65 ui-monospace,Menlo,Consolas,monospace; color:#9fe8c8;
+    height:340px; overflow-y:auto; white-space:pre-wrap}
+  .big{font-size:34px; font-weight:800} .big small{font-size:14px; color:var(--mut); font-weight:500}
+  table{width:100%; border-collapse:collapse; font-size:13.5px}
+  th{color:var(--mut); text-align:left; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:.06em; padding:8px 10px; border-bottom:1px solid var(--line); position:sticky; top:57px; background:var(--bg)}
+  td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+  tr.jr{cursor:pointer} tr.jr:hover td{background:var(--panel2)}
+  .fit{font-weight:800; font-size:15px}
+  .fit.hi{color:var(--acc2)} .fit.mid{color:var(--warn)} .fit.low{color:var(--mut)}
+  .tag{display:inline-block; font-size:11px; padding:1px 8px; border-radius:99px;
+    border:1px solid var(--ger); color:var(--ger); margin-right:4px}
+  .wrap{max-height:62vh; overflow:auto; border:1px solid var(--line); border-radius:12px}
+  .bar{height:9px; border-radius:6px; background:var(--acc); min-width:2px}
+  .trow{display:grid; grid-template-columns:210px 1fr 52px; gap:10px; align-items:center; margin:7px 0}
+  .trow .nm{font-size:13.5px} .trow .ct{font-size:12.5px; color:var(--mut); text-align:right}
+  .lv{font-size:10.5px; padding:0 6px; border-radius:6px; margin-left:6px}
+  .lv.s{background:rgba(46,230,168,.15); color:var(--acc2)}
+  .lv.p{background:rgba(255,180,84,.15); color:var(--warn)}
+  .lv.m{background:rgba(255,107,122,.15); color:var(--bad)}
+  #drawer{position:fixed; right:-560px; top:0; width:540px; max-width:94vw; height:100vh;
+    background:var(--panel); border-left:1px solid var(--line); z-index:40; transition:right .25s;
+    padding:24px; overflow-y:auto}
+  #drawer.open{right:0}
+  #drawer .x{cursor:pointer; float:right; color:var(--mut); font-size:22px; line-height:1}
+  #drawer h2{font-size:18px; margin-bottom:2px}
+  .sub{color:var(--mut); font-size:13px; margin-bottom:14px}
+  .jd{font-size:13.5px; color:#c9d2e4; white-space:pre-wrap; margin-top:12px;
+    border-top:1px solid var(--line); padding-top:14px}
+  .muted{color:var(--mut); font-size:13px}
+  .kpi{display:flex; gap:26px; flex-wrap:wrap; margin:6px 0 16px}
+  a{color:var(--acc)}
+  .hint{font-size:12.5px; color:var(--mut); margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛰 <span>German AI Job Radar</span></h1>
+  <div class="pill" id="status">idle</div>
+  <div class="pill" id="dbcount">db: –</div>
+</header>
+
+<nav>
+  <div class="step active" data-s="cfg">1 · Configure</div>
+  <div class="step" data-s="run">2 · Scrape</div>
+  <div class="step" data-s="score">3 · Score</div>
+  <div class="step" data-s="explore">4 · Explore jobs</div>
+  <div class="step" data-s="market">5 · Market insights</div>
+</nav>
+
+<main>
+<!-- 1 CONFIG -->
+<section id="s-cfg" class="show">
+  <div class="grid">
+    <div class="card">
+      <h3>Sources</h3>
+      <div class="chips" id="sources">
+        <div class="chip" data-v="arbeitnow">Arbeitnow API</div>
+        <div class="chip" data-v="stepstone">StepStone (live)</div>
+        <div class="chip" data-v="jobspy">Indeed + LinkedIn</div>
+        <div class="chip" data-v="fromhtml">Saved HTML</div>
+      </div>
+      <h3 style="margin-top:18px">Tracks</h3>
+      <div class="chips" id="tracks">
+        <div class="chip" data-v="student">Werkstudent / Praktikum</div>
+        <div class="chip" data-v="fulltime">Junior / Graduate</div>
+      </div>
+      <label>Cities (comma-separated)</label>
+      <input type="text" id="cities">
+      <div class="row">
+        <div><label>Results / search</label><input type="number" id="results_wanted"></div>
+        <div><label>Arbeitnow pages</label><input type="number" id="arbeitnow_pages"></div>
+        <div><label>StepStone full JDs</label><input type="number" id="stepstone_details"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Student-track search terms</h3>
+      <textarea id="terms_student"></textarea>
+      <h3 style="margin-top:14px">Junior-track search terms</h3>
+      <textarea id="terms_fulltime"></textarea>
+      <button class="go" style="margin-top:16px" onclick="startRun()">Save &amp; Start scraping →</button>
+      <div class="hint">StepStone &amp; Arbeitnow work from any IP. Indeed/LinkedIn need a home IP — from cloud boxes they return listings with thin JD text.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 RUN -->
+<section id="s-run">
+  <div class="card"><h3>Live pipeline console</h3>
+    <div class="console" id="console">waiting…</div>
+    <button class="ghost" style="margin-top:12px" onclick="go('score')">Continue to scoring →</button>
+  </div>
+</section>
+
+<!-- 3 SCORE -->
+<section id="s-score">
+  <div class="kpi">
+    <div><div class="big" id="k-total">–</div><small>jobs in DB</small></div>
+    <div><div class="big" id="k-student" style="color:var(--acc2)">–</div><small>student roles ranked</small></div>
+    <div><div class="big" id="k-ft" style="color:var(--acc)">–</div><small>junior roles ranked</small></div>
+  </div>
+  <div class="card"><h3>Fit distribution (solid JDs only)</h3>
+    <div id="hist"></div>
+    <button style="margin-top:14px" onclick="rescore()">↻ Re-score against resume</button>
+    <button class="go" style="margin-left:8px" onclick="go('explore')">Explore ranked jobs →</button>
+  </div>
+</section>
+
+<!-- 4 EXPLORE -->
+<section id="s-explore">
+  <div class="card" style="margin-bottom:14px">
+    <div class="row" style="align-items:end">
+      <div><label>Track</label><select id="f-track" onchange="loadJobs()"><option value="student">Werkstudent</option><option value="fulltime">Junior/Graduate</option></select></div>
+      <div><label>Min fit: <b id="f-fit-v">60</b>%</label><input type="range" id="f-fit" min="0" max="100" value="60" oninput="document.getElementById('f-fit-v').textContent=this.value; loadJobs()"></div>
+      <div><label>Search</label><input type="text" id="f-q" placeholder="company or keyword…" oninput="loadJobs()"></div>
+      <div style="flex:0"><label>&nbsp;</label><label style="font-size:13px"><input type="checkbox" id="f-ger" onchange="loadJobs()"> 🇩🇪 German only</label></div>
+      <div style="flex:0"><label>&nbsp;</label><label style="font-size:13px"><input type="checkbox" id="f-solid" checked onchange="loadJobs()"> full JD only</label></div>
+    </div>
+  </div>
+  <div class="muted" id="jobcount" style="margin-bottom:8px"></div>
+  <div class="wrap"><table>
+    <thead><tr><th>Fit</th><th>Job</th><th>Company</th><th>Location</th><th>Missing for you</th></tr></thead>
+    <tbody id="jobsbody"></tbody>
+  </table></div>
+</section>
+
+<!-- 5 MARKET -->
+<section id="s-market">
+  <div class="kpi">
+    <div><div class="big" id="m-n">–</div><small>full-JD roles mined</small></div>
+    <div><div class="big" id="m-ger" style="color:var(--bad)">–</div><small>demand German</small></div>
+  </div>
+  <div class="card" style="margin-bottom:14px"><h3>Segments</h3><div id="m-seg" class="chips"></div></div>
+  <div class="card" style="margin-bottom:14px"><h3>Skill demand vs. your resume</h3><div id="m-topics"></div></div>
+  <div class="card"><h3>Companies hiring BOTH students & juniors (Übernahme pipelines)</h3><div id="m-dual"></div></div>
+</section>
+</main>
+
+<div id="drawer"><span class="x" onclick="drawer.classList.remove('open')">×</span>
+  <div id="drawerbody"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const drawer = $('drawer');
+let CFG = null, timer = null;
+
+function go(s){
+  document.querySelectorAll('section').forEach(x=>x.classList.remove('show'));
+  $('s-'+s).classList.add('show');
+  document.querySelectorAll('.step').forEach(x=>x.classList.toggle('active', x.dataset.s===s));
+  if(s==='run'){ poll(true); }
+  if(s==='score'){ refreshKPIs(); }
+  if(s==='explore'){ loadJobs(); }
+  if(s==='market'){ loadInsights(); }
+}
+document.querySelectorAll('.step').forEach(x=>x.onclick=()=>go(x.dataset.s));
+
+/* ---------- state / polling ---------- */
+async function poll(force){
+  const r = await fetch('/api/state'); const st = await r.json();
+  CFG = st.config;
+  const pill = $('status');
+  pill.textContent = st.status;
+  pill.className = 'pill' + (st.status==='scraping'||st.status==='scoring' ? ' busy' : st.status==='ready' ? ' on' : '');
+  if(st.stats && st.stats.total_jobs != null) $('dbcount').textContent = 'db: ' + st.stats.total_jobs;
+  const con = $('console');
+  const txt = (st.log||[]).join('\n');
+  if(con.textContent !== txt){ con.textContent = txt || 'waiting…'; con.scrollTop = con.scrollHeight; }
+  const busy = st.status==='scraping'||st.status==='scoring';
+  if($('s-run').classList.contains('show') || busy || force){
+    clearTimeout(timer); timer = setTimeout(()=>poll(), busy?1200:4000);
+    if(!busy && force===true){ refreshKPIs(); }
+  }
+}
+
+/* ---------- config ---------- */
+function chipGroup(id, key){
+  $(id).querySelectorAll('.chip').forEach(c=>{
+    c.onclick = ()=>{ c.classList.toggle('sel'); };
+  });
+}
+function syncChips(id, values){
+  $(id).querySelectorAll('.chip').forEach(c=>
+    c.classList.toggle('sel', values.includes(c.dataset.v)));
+}
+function readChips(id){ return [...$(id).querySelectorAll('.chip.sel')].map(c=>c.dataset.v); }
+
+function fillConfig(){
+  if(!CFG) return;
+  syncChips('sources', CFG.sources); syncChips('tracks', CFG.tracks);
+  $('cities').value = CFG.cities.join(', ');
+  $('terms_student').value = CFG.terms_student.join('\n');
+  $('terms_fulltime').value = CFG.terms_fulltime.join('\n');
+  $('results_wanted').value = CFG.results_wanted;
+  $('arbeitnow_pages').value = CFG.arbeitnow_pages;
+  $('stepstone_details').value = CFG.stepstone_details;
+}
+chipGroup('sources'); chipGroup('tracks');
+
+async function startRun(){
+  const body = {
+    sources: readChips('sources'),
+    tracks: readChips('tracks'),
+    cities: $('cities').value.split(',').map(s=>s.trim()).filter(Boolean),
+    terms_student: $('terms_student').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    terms_fulltime: $('terms_fulltime').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    results_wanted: +$('results_wanted').value,
+    arbeitnow_pages: +$('arbeitnow_pages').value,
+    stepstone_details: +$('stepstone_details').value,
+  };
+  await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  await fetch('/api/scrape', {method:'POST'});
+  go('run');
+}
+
+/* ---------- score ---------- */
+async function refreshKPIs(){
+  const st = await (await fetch('/api/state')).json();
+  $('k-total').textContent = st.stats.total_jobs ?? '–';
+  $('k-student').textContent = st.stats.student ?? '–';
+  $('k-ft').textContent = st.stats.fulltime ?? '–';
+  const j = await (await fetch('/api/jobs?track=student&min_fit=0&solid=1')).json();
+  const buckets = {};
+  j.jobs.forEach(x=>{ const b = Math.min(9, Math.floor((x.fit||0)/10)); buckets[b]=(buckets[b]||0)+1; });
+  const max = Math.max(1, ...Object.values(buckets));
+  $('hist').innerHTML = Object.keys(buckets).sort().map(b=>{
+    const lo=b*10, hi=lo+10;
+    return `<div class="trow"><div class="nm">${lo}–${hi}% fit</div>
+      <div><div class="bar" style="width:${buckets[b]/max*100}%; background:${b>=7?'var(--acc2)':b>=5?'var(--acc)':'var(--line)'}"></div></div>
+      <div class="ct">${buckets[b]}</div></div>`;
+  }).join('');
+}
+async function rescore(){ await fetch('/api/rescore',{method:'POST'}); go('run'); }
+
+/* ---------- jobs ---------- */
+function fitClass(f){ return f>=85?'hi':f>=60?'mid':'low'; }
+function esc(s){ return (s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function loadJobs(){
+  const p = new URLSearchParams({
+    track: $('f-track').value, min_fit: $('f-fit').value,
+    q: $('f-q').value, german: $('f-ger').checked?'1':'0',
+    solid: $('f-solid').checked?'1':'0'});
+  const j = await (await fetch('/api/jobs?'+p)).json();
+  $('jobcount').textContent = j.count + ' jobs match';
+  $('jobsbody').innerHTML = j.jobs.map(x=>`
+    <tr class="jr" onclick="openJob('${encodeURIComponent(x.url)}')">
+      <td><span class="fit ${fitClass(x.fit)}">${x.fit==null?'–':x.fit+'%'}</span></td>
+      <td>${esc(x.title)}<br><span class="muted" style="font-size:11.5px">${x.source}</span></td>
+      <td>${esc(x.company)}</td>
+      <td><span class="muted">${esc(x.location)}</span>${x.german?'<br><span class="tag">🇩🇪 German</span>':''}</td>
+      <td class="muted" style="font-size:12px">${esc(x.missing)||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan=5 class="muted">no matches — lower the fit threshold or scrape more sources</td></tr>';
+}
+
+async function openJob(u){
+  const job = await (await fetch('/api/job?u='+u)).json();
+  $('drawerbody').innerHTML = `
+    <h2>${esc(job.title)}</h2>
+    <div class="sub">${esc(job.company)} · ${esc(job.location)} · ${esc(job.source)} · ${esc(job.posted||'')}</div>
+    <a href="${esc(job.url)}" target="_blank" rel="noopener"><button>Open original posting ↗</button></a>
+    <div class="jd">${esc(job.description||'(no description stored — open the original)')}</div>`;
+  drawer.classList.add('open');
+}
+
+/* ---------- insights ---------- */
+function level(credit){ return credit>=.75?['s','Strong']:credit>=.25?['p','Partial']:['m','Missing']; }
+async function loadInsights(){
+  const d = await (await fetch('/api/insights')).json();
+  if(d.error){ $('m-topics').textContent = 'insights unavailable: '+d.error; return; }
+  $('m-n').textContent = d.n;
+  const gerT = d.topics['German language'];
+  $('m-ger').textContent = d.n ? Math.round(100*gerT.count/d.n)+'%' : '–';
+  $('m-seg').innerHTML = Object.entries(d.segments).sort((a,b)=>b[1]-a[1])
+    .map(([k,v])=>`<div class="chip">${esc(k)} · <b>${v}</b></div>`).join('');
+  const stacks = ['LLM/GenAI','MLOps/Cloud','Robotics/CV','Data','Basics'];
+  let html = '';
+  for(const st of stacks){
+    const tops = Object.entries(d.topics).filter(([k,v])=>v.stack===st && v.count>0)
+      .sort((a,b)=>b[1].count-a[1].count);
+    if(!tops.length) continue;
+    const max = tops[0][1].count;
+    html += `<div class="muted" style="margin:14px 0 4px; font-size:12px; text-transform:uppercase; letter-spacing:.06em">${st}</div>`;
+    for(const [k,v] of tops){
+      const [cls, lbl] = level(v.credit);
+      html += `<div class="trow"><div class="nm">${esc(k)}<span class="lv ${cls}">${lbl}</span></div>
+        <div><div class="bar" style="width:${v.count/max*100}%; background:${v.credit<.25?'var(--bad)':v.credit<.75?'var(--warn)':'var(--acc2)'}"></div></div>
+        <div class="ct">${v.count}</div></div>`;
+    }
+  }
+  $('m-topics').innerHTML = html;
+  $('m-dual').innerHTML = (d.dual||[]).map(([c,s,f])=>
+    `<div class="trow" style="grid-template-columns:1fr 130px"><div class="nm">${esc(c)}</div><div class="ct">${s} student · ${f} junior</div></div>`).join('') || '<span class="muted">needs more scraped data</span>';
+}
+
+/* ---------- boot ---------- */
+(async ()=>{ const st = await (await fetch('/api/state')).json(); CFG = st.config; fillConfig(); poll(true); })();
+</script>
+</body>
+</html>

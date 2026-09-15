@@ -1,0 +1,6 @@
+python-jobspy>=1.4
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+pandas>=2.0
+matplotlib>=3.8
