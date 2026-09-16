@@ -8,16 +8,16 @@ mines the corpus for skill-demand statistics.
 ![demand chart](docs/demand_chart.png)
 
 > Headline finding (corpus of ~2,700 listings, Sept 2026): **German is demanded
-> explicitly in ~68% of relevant AI roles with full JD text (96 Werkstudent /
+> explicitly in ~67% of relevant AI roles with full JD text (97 Werkstudent /
 > 13 Junior).** The fastest-growing skill cluster for AI student roles is
-> agentic AI (agents/tool-calling 18%, LangChain 9%, RAG 9%). Full methodology below.
+> agentic AI (agents/tool-calling 19%, LangChain 10%, RAG 9%). Full methodology below.
 
 ## What it does
 
 ```
 ┌─────────────┐   ┌──────────────┐   ┌───────────────┐   ┌──────────────┐
 │  4 sources  │ → │  SQLite DB   │ → │ resume-profile │ → │ ranked CSVs  │
-│ StepStone   │   │ dedup by URL │   │ scoring (43    │   │ + market     │
+│ StepStone   │   │ dedup by URL │   │ scoring (41    │   │ + market     │
 │ Indeed/LinkedIn │ │ (title+co in │  │ skills, weighted) │ │ reports +   │
 │ Arbeitnow API│  │  fallback)   │   │ + track split  │   │ topic mining │
 │ saved HTML  │   └──────────────┘   └───────────────┘   └──────────────┘
