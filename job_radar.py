@@ -28,6 +28,7 @@ import argparse
 import hashlib
 import html
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -233,6 +234,14 @@ load_profile(warn=False)
 def active_profile() -> dict:
     """The currently loaded profile (dict as read from profile.json)."""
     return _ACTIVE_PROFILE
+
+
+def clear_console() -> None:
+    """Clear the terminal so each run starts with a fresh screen."""
+    try:
+        os.system("cls" if os.name == "nt" else "clear")
+    except Exception:
+        pass
 
 # ----------------------------- helpers ---------------------------------
 
@@ -572,6 +581,8 @@ if __name__ == "__main__":
     tracks = {t.strip().lower() for t in args.tracks.split(",") if t.strip()}
     if args.profile:
         load_profile(args.profile)
+
+    clear_console()
 
     con = init_db()
     con.execute("UPDATE jobs SET description='' WHERE LOWER(COALESCE(description,'')) IN ('nan','none')")

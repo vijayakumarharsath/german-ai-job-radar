@@ -57,6 +57,12 @@ def log(msg: str) -> None:
         STATE["log"] = STATE["log"][-400:]
 
 
+def clear_log() -> None:
+    """Wipe the console panel so each run starts clean."""
+    with LOCK:
+        STATE["log"] = []
+
+
 def set_status(s: str) -> None:
     with LOCK:
         STATE["status"] = s
@@ -86,6 +92,7 @@ def run_pipeline() -> None:
 
     try:
         set_status("scraping")
+        clear_log()
         log("— run started —")
 
         if "arbeitnow" in cfg["sources"]:
@@ -140,6 +147,8 @@ def score_now(con=None) -> None:
 
     own = con is None
     con = con or jr.init_db()
+    if own:
+        clear_log()
     set_status("scoring")
     log("scoring against resume profile…")
     with LOCK:
