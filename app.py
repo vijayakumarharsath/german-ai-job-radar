@@ -258,13 +258,30 @@ class Handler(BaseHTTPRequestHandler):
         if u.path in ("/", "/index.html"):
             f = (BASE / "web" / "index.html").read_bytes()
             self._send(200, f, "text/html; charset=utf-8")
+        elif u.path.startswith("/docs/") and u.path != "/docs/":
+            allowed = (BASE / "docs").resolve()
+            target = (allowed / u.path.removeprefix("/docs/")).resolve()
+            if allowed in target.parents and target.is_file():
+                ct = ("image/png" if target.suffix == ".png"
+                      else "text/markdown; charset=utf-8" if target.suffix == ".md"
+                      else "application/octet-stream")
+                self._send(200, target.read_bytes(), ct)
+            else:
+                self._json({"error": "not found"}, 404)
         elif u.path == "/api/state":
             with LOCK:
                 self._json({"status": STATE["status"], "log": STATE["log"][-120:],
                             "stats": STATE["stats"], "config": STATE["config"]})
+        elif u.path == "/api/config":
+            with LOCK:
+                self._json(STATE["config"])
         elif u.path == "/api/jobs":
             track = q.get("track", ["student"])[0]
-            min_fit = int(q.get("min_fit", ["0"])[0])
+            try:
+                min_fit = int(q.get("min_fit", ["0"])[0])
+            except ValueError:
+                self._json({"error": "min_fit must be an integer"}, 400)
+                return
             only_ger = q.get("german", ["0"])[0] == "1"
             solid_only = q.get("solid", ["1"])[0] == "1"
             text = unquote(q.get("q", [""])[0]).lower()
@@ -313,10 +330,13 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         u = urlparse(self.path)
         length = int(self.headers.get("Content-Length", 0))
-        try:
-            body = json.loads(self.rfile.read(length) or b"{}")
-        except json.JSONDecodeError:
-            body = {}
+        body = {}
+        if length:
+            try:
+                body = json.loads(self.rfile.read(length))
+            except json.JSONDecodeError:
+                self._json({"error": "invalid JSON body"}, 400)
+                return
 
         if u.path == "/api/config":
             apply_config(body)

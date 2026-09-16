@@ -36,13 +36,6 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
-
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
 BASE = Path(__file__).resolve().parent
 DB = BASE / "jobs.db"
 OUT = BASE / "output"
@@ -187,7 +180,8 @@ _DEFAULT_KEYWORDS = {
     "Digital twin":              (1, [r"digital\s*twin", r"digitalen?\s*zwilling"], 1.0),
 }
 KEYWORDS = dict(_DEFAULT_KEYWORDS)
-COMPILED = {k: [re.compile(v, re.I) for v in variants] for k, (_, variants, _) in KEYWORDS.items()}
+COMPILED = {k: re.compile("(?:%s)" % "|".join(f"(?:{v})" for v in variants), re.I)
+            for k, (_, variants, _) in KEYWORDS.items()}
 PROFILE_FILE = BASE / "profile.json"
 _ACTIVE_PROFILE: dict = {"name": "built-in starter profile"}
 LEVEL_TO_CREDIT = {"strong": 1.0, "partial": 0.5, "novice": 0.25, "none": 0.0}
@@ -215,7 +209,7 @@ def load_profile(path: str | Path | None = None, warn: bool = True) -> dict:
                     LEVEL_TO_CREDIT.get(str(spec.get("level", "none")).lower(), 0.0))
     if kw:
         KEYWORDS = kw
-        COMPILED = {k: [re.compile(v, re.I) for v in variants]
+        COMPILED = {k: re.compile("(?:%s)" % "|".join(f"(?:{v})" for v in variants), re.I)
                     for k, (_, variants, _) in kw.items()}
     tracks = data.get("tracks", {})
     if tracks.get("student"):
@@ -260,15 +254,39 @@ def norm_url(u: str) -> str:
 
 
 def init_db() -> sqlite3.Connection:
-    con = sqlite3.connect(DB, timeout=30)
-    con.execute("PRAGMA journal_mode=WAL")
-    con.execute("PRAGMA busy_timeout=30000")
-    con.execute(
-        """CREATE TABLE IF NOT EXISTS jobs(
-            url_hash TEXT PRIMARY KEY, source TEXT, title TEXT, company TEXT,
-            location TEXT, url TEXT, description TEXT, date_posted TEXT,
-            first_seen TEXT)"""
-    )
+    try:
+        con = sqlite3.connect(DB, timeout=30)
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("PRAGMA busy_timeout=30000")
+        con.execute(
+            """CREATE TABLE IF NOT EXISTS jobs(
+                url_hash TEXT PRIMARY KEY, source TEXT, title TEXT, company TEXT,
+                location TEXT, url TEXT, description TEXT, date_posted TEXT,
+                first_seen TEXT)"""
+        )
+        con.execute("SELECT count(*) FROM jobs").fetchone()
+    except sqlite3.DatabaseError:
+        try:
+            con.close()
+        except Exception:
+            pass
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        bad = DB.with_name(f"{DB.name}.corrupt-{stamp}")
+        DB.replace(bad)
+        for ext in ("-wal", "-shm"):
+            side = DB.with_name(DB.name + ext)
+            if side.exists():
+                side.replace(DB.with_name(bad.name + ext))
+        print(f"⚠ jobs.db unreadable — quarantined as {bad.name}, rebuilding empty DB")
+        con = sqlite3.connect(DB, timeout=30)
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("PRAGMA busy_timeout=30000")
+        con.execute(
+            """CREATE TABLE IF NOT EXISTS jobs(
+                url_hash TEXT PRIMARY KEY, source TEXT, title TEXT, company TEXT,
+                location TEXT, url TEXT, description TEXT, date_posted TEXT,
+                first_seen TEXT)"""
+        )
     try:
         con.execute("ALTER TABLE jobs ADD COLUMN track TEXT DEFAULT ''")
     except sqlite3.OperationalError:
@@ -325,6 +343,8 @@ def _refresh_if_stale(con: sqlite3.Connection, key: str,
 # ----------------------------- scrapers --------------------------------
 
 def scrape_jobspy(terms: list[str]) -> list[dict]:
+    import requests
+    import pandas as pd
     from jobspy import scrape_jobs
 
     rows = []
@@ -375,6 +395,7 @@ def scrape_jobspy(terms: list[str]) -> list[dict]:
 
 
 def scrape_arbeitnow() -> list[dict]:
+    import requests
     rows = []
     for page in range(1, ARBEITNOW_PAGES + 1):
         try:
@@ -426,7 +447,7 @@ def score_all(con: sqlite3.Connection, track: str) -> list[dict]:
             sum(1 for p in CORE_ML_RE if p.search(desc)) >= 3
         if not relevant:
             continue
-        demanded = [k for k in KEYWORDS if any(p.search(text) for p in COMPILED[k])]
+        demanded = [k for k in KEYWORDS if COMPILED[k].search(text)]
         sufficient = len(demanded) >= 3   # enough JD text to trust the score
         wsum = sum(KEYWORDS[k][0] for k in demanded)
         fit = round(100 * sum(KEYWORDS[k][0] * KEYWORDS[k][2] for k in demanded) / wsum) if (wsum and sufficient) else None
@@ -464,18 +485,13 @@ def write_outputs(scored: list[dict], track: str) -> Path:
         r["fit_score"] = s["fit_score"] if s["fit_score"] is not None else ""
         r["jd_quality"] = "" if s["_sufficient"] else "short JD — open link to verify"
         out_rows.append(r)
-    if pd is not None and out_rows:
-        df = pd.DataFrame(out_rows)
-        csv_path = OUT / f"jobs_ranked{suffix}.csv"
-        df.to_csv(csv_path, index=False)
-    else:
-        csv_path = OUT / f"jobs_ranked{suffix}.csv"
-        import csv as _csv
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            w = _csv.DictWriter(f, fieldnames=list(out_rows[0].keys()) if out_rows
-                                else ["fit_score", "title"])
-            w.writeheader()
-            w.writerows(out_rows)
+    csv_path = OUT / f"jobs_ranked{suffix}.csv"
+    import csv as _csv
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = _csv.DictWriter(f, fieldnames=list(out_rows[0].keys()) if out_rows
+                            else ["fit_score", "title"])
+        w.writeheader()
+        w.writerows(out_rows)
 
     solid = [s for s in scored if s["_sufficient"]]
     n = len(solid)
