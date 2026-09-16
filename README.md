@@ -116,7 +116,5 @@ Outputs land in `output/`: ranked CSVs per track, market reports per track,
 
 ## Built by
 
-[Harsath Vijayakumar](https://www.linkedin.com/in/vijayakumarharsath) — M.Sc.
-Artificial Intelligence & Robotics student (Hof University, Germany), hunting
-Werkstudent roles and building in public. Findings thread:
-[LinkedIn post](#) · [GitHub profile](https://github.com/vijayakumarharsath)
+An M.Sc. Artificial Intelligence & Robotics student (Hof University, Germany),
+hunting Werkstudent roles and building in public.

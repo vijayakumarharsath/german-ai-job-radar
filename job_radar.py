@@ -199,7 +199,7 @@ def load_profile(path: str | Path | None = None, warn: bool = True) -> dict:
     global KEYWORDS, COMPILED, SEARCH_TERMS, FULLTIME_TERMS, CITIES, _ACTIVE_PROFILE
     p = Path(path) if path else PROFILE_FILE
     try:
-        data = json.loads(p.read_text(encoding="utf-8"))
+        data = json.loads(p.read_text(encoding="utf-8-sig"))
     except Exception as e:
         if warn:
             print(f"! can't load profile {p} ({type(e).__name__}: {e})\n"
