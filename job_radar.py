@@ -260,7 +260,9 @@ def norm_url(u: str) -> str:
 
 
 def init_db() -> sqlite3.Connection:
-    con = sqlite3.connect(DB)
+    con = sqlite3.connect(DB, timeout=30)
+    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA busy_timeout=30000")
     con.execute(
         """CREATE TABLE IF NOT EXISTS jobs(
             url_hash TEXT PRIMARY KEY, source TEXT, title TEXT, company TEXT,

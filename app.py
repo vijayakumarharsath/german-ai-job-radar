@@ -151,39 +151,45 @@ def score_now(con=None) -> None:
         clear_log()
     set_status("scoring")
     log("scoring against resume profile…")
-    with LOCK:
-        STATE["jobs"] = {"student": [], "fulltime": []}
-    for track in ("student", "fulltime"):
-        scored = jr.score_all(con, track)
-        rows = []
-        for s in scored:
-            rows.append({
-                "fit": s["fit_score"],
-                "title": s["title"], "company": s["company"],
-                "location": s["location"], "source": s["source"],
-                "german": s["german_demanded"] == "yes",
-                "missing": s["missing_skills"],
-                "posted": s["posted"], "url": s["url"],
-                "solid": s["_sufficient"],
-                "n_skills": len(s["_demanded"]),
-            })
+    try:
         with LOCK:
-            STATE["jobs"][track] = rows
-        try:
-            jr.write_outputs(scored, track)
-        except Exception as e:
-            log(f"! report write failed: {e}")
-    with LOCK:
-        STATE["stats"].update({
-            "student": len(STATE["jobs"]["student"]),
-            "fulltime": len(STATE["jobs"]["fulltime"]),
-        })
-    log(f"scored: {STATE['stats']['student']} student + "
-        f"{STATE['stats']['fulltime']} junior roles")
-    con.commit()          # persist track labels (needed for dual-track query)
-    if own:
-        con.close()
-        set_status("ready")
+            STATE["jobs"] = {"student": [], "fulltime": []}
+        for track in ("student", "fulltime"):
+            scored = jr.score_all(con, track)
+            rows = []
+            for s in scored:
+                rows.append({
+                    "fit": s["fit_score"],
+                    "title": s["title"], "company": s["company"],
+                    "location": s["location"], "source": s["source"],
+                    "german": s["german_demanded"] == "yes",
+                    "missing": s["missing_skills"],
+                    "posted": s["posted"], "url": s["url"],
+                    "solid": s["_sufficient"],
+                    "n_skills": len(s["_demanded"]),
+                })
+            with LOCK:
+                STATE["jobs"][track] = rows
+            try:
+                jr.write_outputs(scored, track)
+            except Exception as e:
+                log(f"! report write failed: {e}")
+        with LOCK:
+            STATE["stats"].update({
+                "student": len(STATE["jobs"]["student"]),
+                "fulltime": len(STATE["jobs"]["fulltime"]),
+            })
+        log(f"scored: {STATE['stats']['student']} student + "
+            f"{STATE['stats']['fulltime']} junior roles")
+        con.commit()          # persist track labels (needed for dual-track query)
+    except Exception as e:
+        log(f"✖ scoring error: {type(e).__name__}: {str(e)[:200]}")
+        set_status("error")
+    finally:
+        if own:
+            con.close()
+            if STATE["status"] == "scoring":
+                set_status("ready")
 
 
 def auto_load() -> None:
@@ -327,6 +333,10 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": True})
 
         elif u.path == "/api/rescore":
+            with LOCK:
+                if STATE["status"] in ("scraping", "scoring"):
+                    self._json({"ok": False, "error": "a run is already active"}, 409)
+                    return
             threading.Thread(target=score_now, daemon=True).start()
             self._json({"ok": True})
 
