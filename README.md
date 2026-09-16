@@ -1,13 +1,13 @@
 # 🇩🇪 German AI Job Radar
 
 **I stopped guessing what the German AI job market wants and measured it instead.**
-This tool scrapes ~2,700 live German job listings, extracts the full job descriptions,
+This tool scrapes ~3,000 live German job listings, extracts the full job descriptions,
 scores every relevant AI/ML/Data/Robotics role against a resume keyword profile, and
 mines the corpus for skill-demand statistics.
 
 ![demand chart](docs/demand_chart.png)
 
-> Headline finding (corpus of ~2,700 listings, Sept 2026): **German is demanded
+> Headline finding (corpus of ~3,000 listings, Sept 2026): **German is demanded
 > explicitly in ~67% of relevant AI roles with full JD text (97 Werkstudent /
 > 13 Junior).** The fastest-growing skill cluster for AI student roles is
 > agentic AI (agents/tool-calling 19%, LangChain 10%, RAG 9%). Full methodology below.
