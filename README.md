@@ -52,13 +52,6 @@ python cleanup_db.py          # collapse duplicate listings across sources (main
 Outputs land in `output/`: ranked CSVs per track, market reports per track,
 `topic_demand_report.md`.
 
-Optional LLM deep-scoring (Kimi/Moonshot API, ~$0.03 per 30 jobs):
-
-```bash
-export MOONSHOT_API_KEY="sk-..."
-python kimi_shortlist.py
-```
-
 ## Repo layout
 
 | File | Purpose |
@@ -67,7 +60,6 @@ python kimi_shortlist.py
 | `stepstone.py` | StepStone search + JSON-LD detail scraper (verified 2026 markup) |
 | `indeed_direct.py` | Indeed direct requests + saved-HTML parser (Cloudflare-aware) |
 | `topic_demand.py` | topic/skill demand mining over the JD corpus |
-| `kimi_shortlist.py` | optional LLM second-pass scoring |
 | `cleanup_db.py` | one-time migration: rebuild canonical URL-hash keys, merge dupes |
 | `data/sample_jobs.csv` | 10-row sample of the schema |
 
