@@ -35,6 +35,25 @@ HEADERS = {
 DELAY = 1.5  # seconds between requests
 
 
+def get(url: str, timeout: int = 12, retries: int = 3) -> requests.Response | None:
+    """GET with polite retries + backoff. A throttling server gets a few chances,
+    then ONE quiet notice instead of a screen full of errors."""
+    last_err = ""
+    for attempt in range(1, retries + 1):
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=timeout, allow_redirects=True)
+            if r.status_code != 200:
+                last_err = f"HTTP {r.status_code}"
+                time.sleep(DELAY * attempt)
+                continue
+            return r
+        except Exception as e:
+            last_err = f"{type(e).__name__} {str(e)[:60]}"
+            time.sleep(DELAY * attempt)
+    print(f"    - stepstone throttled ({url[-70:]}): {last_err}")
+    return None
+
+
 def _clean(s: str) -> str:
     s = re.sub(r"<[^>]+>", " ", s or "")
     s = html_mod.unescape(s)
@@ -45,18 +64,6 @@ def _slug(text: str) -> str:
     text = (text.lower()
             .replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss"))
     return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
-
-
-def get(url: str, timeout: int = 30) -> requests.Response | None:
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=timeout, allow_redirects=True)
-        if r.status_code != 200:
-            print(f"    ! stepstone {r.status_code} on {url[:90]}")
-            return None
-        return r
-    except Exception as e:
-        print(f"    ! stepstone error: {type(e).__name__} {str(e)[:80]}")
-        return None
 
 
 def parse_search(page_html: str) -> list[dict]:
@@ -89,7 +96,7 @@ def parse_search(page_html: str) -> list[dict]:
 
 def fetch_detail_jd(url: str) -> str:
     """Fetch one StepStone job page, return full JD text via JSON-LD JobPosting."""
-    r = get(url)
+    r = get(url, retries=2)
     time.sleep(DELAY)
     if r is None:
         return ""
@@ -128,6 +135,7 @@ def harvest(queries: list[str], cities: list[str], pages: int = 1,
         r"|\brobot|robotik|computer\s*vision|bildverarbeitung|\bllm\b|\bnlp\b|informatik|software|perception|autonom|vision|python|daten|analytics", re.I)
 
     rows, seen = [], set()
+    missing = 0
     for q in queries:
         for city in cities:
             for p in range(1, pages + 1):
@@ -139,16 +147,39 @@ def harvest(queries: list[str], cities: list[str], pages: int = 1,
                     if key not in seen:
                         seen.add(key)
                         rows.append(rec)
+                if not found:
+                    missing += 1
+                    if missing >= 5:
+                        print("  + stepstone: search throttled — "
+                              "skipping remaining StepStone queries")
+                        return rows
+                else:
+                    missing = 0
     # enrich: student+relevant jobs with only a teaser get the full JD
     candidates = [r for r in rows
                   if ENRICH_TITLE_RE.search(r["title"]) and not SENIOR_RE.search(r["title"])
                   and len(r["description"]) < 800
                   and relevant_re.search(r["title"] + " " + r["description"])]
     print(f"  + stepstone: fetching {min(len(candidates), detail_limit)} full JDs…")
+    ok = fails = 0
+    consecutive = 0
+    deadline = time.monotonic() + 60  # hard budget: never stall a run on detail fetch
     for rec in candidates[:detail_limit]:
+        if time.monotonic() > deadline:
+            print("  + stepstone: detail phase hit 60s budget — skipping the rest")
+            break
         jd = fetch_detail_jd(rec["url"])
         if len(jd) > len(rec["description"]):
             rec["description"] = jd
+            ok += 1
+            consecutive = 0
+        else:
+            fails += 1
+            consecutive += 1
+            if consecutive >= 3:
+                print("  + stepstone: stopping early — server throttling")
+                break
+    print(f"  + stepstone: details done — {ok} full JDs, {fails} throttled/skipped")
     return rows
 
 
