@@ -1,0 +1,458 @@
+{
+  "name": "Harsath Vijayakumar — starter profile",
+  "about": "Edit this file to score the radar against YOUR resume. level: strong / partial / novice / none. weight: 3 high · 2 medium · 1 low. patterns are regexes matched against job titles + descriptions. tracks = search terms per target, cities = where you want to work.",
+  "tracks": {
+    "student": [
+      "Werkstudent Machine Learning",
+      "Werkstudent AI",
+      "Werkstudent Data Science",
+      "Werkstudent Robotics",
+      "Working Student Machine Learning",
+      "Werkstudent Computer Vision"
+    ],
+    "fulltime": [
+      "Junior Machine Learning Engineer",
+      "Junior Data Scientist",
+      "Junior AI Engineer",
+      "Junior Software Engineer",
+      "Junior Computer Vision",
+      "Junior Robotics",
+      "Junior Data Engineer",
+      "Trainee Data Science",
+      "Graduate Program IT"
+    ]
+  },
+  "cities": [
+    "Berlin",
+    "München",
+    "Stuttgart"
+  ],
+  "keywords": {
+    "Python": {
+      "weight": 3,
+      "patterns": [
+        "python"
+      ],
+      "level": "strong"
+    },
+    "Machine Learning": {
+      "weight": 3,
+      "patterns": [
+        "machine\\s*learning",
+        "maschinelles?\\s*lernen"
+      ],
+      "level": "strong"
+    },
+    "Deep Learning": {
+      "weight": 3,
+      "patterns": [
+        "deep\\s*learning"
+      ],
+      "level": "strong"
+    },
+    "PyTorch": {
+      "weight": 3,
+      "patterns": [
+        "pytorch"
+      ],
+      "level": "none"
+    },
+    "TensorFlow/Keras": {
+      "weight": 3,
+      "patterns": [
+        "tensorflow",
+        "\\bkeras\\b"
+      ],
+      "level": "strong"
+    },
+    "Computer Vision": {
+      "weight": 3,
+      "patterns": [
+        "computer\\s*vision",
+        "bildverarbeitung"
+      ],
+      "level": "strong"
+    },
+    "OpenCV": {
+      "weight": 2,
+      "patterns": [
+        "opencv"
+      ],
+      "level": "strong"
+    },
+    "Object detect/segmentation": {
+      "weight": 2,
+      "patterns": [
+        "object\\s*detection",
+        "objekt(?:er)?kennung",
+        "objektdetektion",
+        "\\byolo\\b",
+        "segmentier",
+        "image\\s*classification",
+        "pose\\s*estimation",
+        "posenschätzung"
+      ],
+      "level": "partial"
+    },
+    "NLP": {
+      "weight": 2,
+      "patterns": [
+        "\\bnlp\\b",
+        "natural\\s*language"
+      ],
+      "level": "strong"
+    },
+    "LLM/GenAI": {
+      "weight": 3,
+      "patterns": [
+        "\\bllms?\\b",
+        "large\\s*language",
+        "sprachmodell",
+        "\\bgpt\\b",
+        "genai",
+        "generative\\s*(ai|ki|intelligenz)"
+      ],
+      "level": "strong"
+    },
+    "HuggingFace/transformers": {
+      "weight": 2,
+      "patterns": [
+        "hugging[\\s-]?face",
+        "\\btransformers\\b"
+      ],
+      "level": "partial"
+    },
+    "LangChain/AI agents": {
+      "weight": 2,
+      "patterns": [
+        "langchain",
+        "langgraph",
+        "agentic",
+        "multi-?agent"
+      ],
+      "level": "partial"
+    },
+    "ROS/ROS2": {
+      "weight": 3,
+      "patterns": [
+        "\\bros\\s*2?\\b"
+      ],
+      "level": "strong"
+    },
+    "MoveIt/motion planning": {
+      "weight": 2,
+      "patterns": [
+        "moveit",
+        "motion\\s*planning",
+        "bewegungsplanung"
+      ],
+      "level": "none"
+    },
+    "SLAM": {
+      "weight": 2,
+      "patterns": [
+        "\\bslam\\b"
+      ],
+      "level": "none"
+    },
+    "Nav2/path planning": {
+      "weight": 2,
+      "patterns": [
+        "\\bnav2\\b",
+        "navigation\\s*stack",
+        "path\\s*planning",
+        "pfadplanung"
+      ],
+      "level": "none"
+    },
+    "Gazebo/Isaac/robot sim": {
+      "weight": 2,
+      "patterns": [
+        "gazebo",
+        "isaac\\s*sim",
+        "mujoco",
+        "pybullet",
+        "webots",
+        "coppeliasim"
+      ],
+      "level": "novice"
+    },
+    "Kinematics/control theory": {
+      "weight": 2,
+      "patterns": [
+        "kinematik",
+        "kinematic",
+        "regelungstechnik",
+        "control\\s*theory",
+        "kalman",
+        "koordinatentransformation",
+        "coordinate\\s*transformation"
+      ],
+      "level": "none"
+    },
+    "C++": {
+      "weight": 3,
+      "patterns": [
+        "\\bc\\+\\+"
+      ],
+      "level": "partial"
+    },
+    "Java": {
+      "weight": 1,
+      "patterns": [
+        "\\bjava\\b(?!script)"
+      ],
+      "level": "strong"
+    },
+    "Docker": {
+      "weight": 3,
+      "patterns": [
+        "docker",
+        "containeris",
+        "containeriz"
+      ],
+      "level": "strong"
+    },
+    "Kubernetes": {
+      "weight": 2,
+      "patterns": [
+        "kubernetes",
+        "\\bk8s\\b"
+      ],
+      "level": "none"
+    },
+    "CI/CD": {
+      "weight": 2,
+      "patterns": [
+        "ci/?cd",
+        "continuous\\s*(integration|delivery)",
+        "github\\s*actions",
+        "gitlab\\s*ci"
+      ],
+      "level": "novice"
+    },
+    "Git": {
+      "weight": 3,
+      "patterns": [
+        "\\bgit\\b",
+        "github",
+        "gitlab"
+      ],
+      "level": "strong"
+    },
+    "Linux/Bash": {
+      "weight": 3,
+      "patterns": [
+        "\\blinux\\b",
+        "ubuntu",
+        "\\bbash\\b",
+        "\\bunix\\b"
+      ],
+      "level": "strong"
+    },
+    "SQL": {
+      "weight": 3,
+      "patterns": [
+        "\\bsql\\b",
+        "mysql",
+        "postgres",
+        "\\bsqlite\\b"
+      ],
+      "level": "strong"
+    },
+    "Pandas/NumPy": {
+      "weight": 3,
+      "patterns": [
+        "pandas",
+        "numpy"
+      ],
+      "level": "strong"
+    },
+    "scikit-learn": {
+      "weight": 3,
+      "patterns": [
+        "scikit-?learn",
+        "sklearn"
+      ],
+      "level": "strong"
+    },
+    "APIs (FastAPI/Flask/REST)": {
+      "weight": 2,
+      "patterns": [
+        "fastapi",
+        "flask",
+        "django",
+        "rest[\\s-]?api",
+        "\\bapi\\b"
+      ],
+      "level": "partial"
+    },
+    "Cloud (AWS/Azure/GCP)": {
+      "weight": 2,
+      "patterns": [
+        "\\baws\\b",
+        "amazon\\s*web\\s*services",
+        "azure",
+        "google\\s*cloud",
+        "\\bgcp\\b"
+      ],
+      "level": "none"
+    },
+    "Spark/Kafka/Airflow": {
+      "weight": 1,
+      "patterns": [
+        "\\bspark\\b",
+        "hadoop",
+        "kafka",
+        "airflow"
+      ],
+      "level": "none"
+    },
+    "Power BI/Tableau": {
+      "weight": 2,
+      "patterns": [
+        "power\\s*bi",
+        "tableau",
+        "looker"
+      ],
+      "level": "none"
+    },
+    "Statistics/math": {
+      "weight": 2,
+      "patterns": [
+        "statisti",
+        "wahrscheinlichkeits",
+        "probability"
+      ],
+      "level": "strong"
+    },
+    "Data pipelines/analysis": {
+      "weight": 2,
+      "patterns": [
+        "data[\\s-]*pipeline",
+        "datenpipeline",
+        "\\betl\\b",
+        "datenanalyse",
+        "data\\s*analysis",
+        "datenverarbeitung"
+      ],
+      "level": "partial"
+    },
+    "Embedded/RPi/sensors": {
+      "weight": 2,
+      "patterns": [
+        "embedded",
+        "mikrocontroller",
+        "microcontroller",
+        "raspberry",
+        "arduino",
+        "sensorik",
+        "esp32",
+        "stm32"
+      ],
+      "level": "strong"
+    },
+    "CUDA/Jetson/edge AI": {
+      "weight": 2,
+      "patterns": [
+        "\\bcuda\\b",
+        "jetson",
+        "tensorrt",
+        "edge[\\s-]*(ai|computing|deployment)"
+      ],
+      "level": "novice"
+    },
+    "Reinforcement/imitation": {
+      "weight": 2,
+      "patterns": [
+        "reinforcement\\s*learning",
+        "bestärkendes?\\s*lernen",
+        "imitation\\s*learning",
+        "diffusion\\s*polic"
+      ],
+      "level": "none"
+    },
+    "German (B1+)": {
+      "weight": 3,
+      "patterns": [
+        "\\bdeutsch\\b(?!land)",
+        "deutsch(?:kenntnisse?|kenntnis|sprachig)",
+        "deutsch[a-z]*\\s+sprache",
+        "sprachkenntnisse",
+        "\\bgerman\\b",
+        "\\bb[12]\\b",
+        "verhandlungssicher"
+      ],
+      "level": "partial"
+    },
+    "Agile/Scrum": {
+      "weight": 2,
+      "patterns": [
+        "agile",
+        "scrum",
+        "kanban"
+      ],
+      "level": "strong"
+    },
+    "MATLAB/Simulink": {
+      "weight": 2,
+      "patterns": [
+        "\\bmatlab\\b",
+        "simulink"
+      ],
+      "level": "none"
+    },
+    "Digital twin": {
+      "weight": 1,
+      "patterns": [
+        "digital\\s*twin",
+        "digitalen?\\s*zwilling"
+      ],
+      "level": "strong"
+    }
+  },
+  "topics": {
+    "RAG / retrieval-augmented": "partial",
+    "Vector DBs": "none",
+    "LangChain/LlamaIndex": "partial",
+    "AI agents / tool calling": "partial",
+    "Fine-tuning / LoRA / PEFT": "partial",
+    "RLHF / alignment": "none",
+    "Quantization / efficiency": "none",
+    "Local LLM serving": "novice",
+    "Multimodal / VLM": "novice",
+    "Speech / ASR / TTS": "partial",
+    "Prompt engineering": "strong",
+    "EU AI Act / governance": "none",
+    "MLOps general": "none",
+    "Experiment tracking": "none",
+    "Workflow orchestration": "none",
+    "Cloud ML platforms": "none",
+    "Kubernetes": "none",
+    "CI/CD": "novice",
+    "APIs / microservices": "partial",
+    "Big data (Spark/Kafka)": "none",
+    "BI (Power BI/Tableau)": "none",
+    "Streamlit/Gradio demos": "none",
+    "ROS / ROS 2": "strong",
+    "Nav2 / motion planning": "novice",
+    "SLAM": "none",
+    "Simulation (Gazebo/Isaac…)": "novice",
+    "Point clouds / 3D": "novice",
+    "Sensor fusion / Kalman": "partial",
+    "Object detection / YOLO": "partial",
+    "Depth / RGB-D cameras": "partial",
+    "Edge AI (Jetson/TensorRT)": "novice",
+    "AGV / AMR / autonomous": "none",
+    "Manipulation / cobots": "partial",
+    "Control theory / kinematics": "none",
+    "Functional safety": "none",
+    "Industry 4.0 / OPC UA / MES": "strong",
+    "SQL / databases": "strong",
+    "Data pipelines / ETL": "partial",
+    "Statistics / A-B testing": "strong",
+    "Excel": "strong",
+    "German language": "partial",
+    "Agile / Scrum": "strong"
+  }
+}

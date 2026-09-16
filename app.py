@@ -205,8 +205,8 @@ def insights_payload() -> dict:
     jobs = td.load_relevant_jobs()
     n = len(jobs)
     seg_count, topics = {}, {}
-    for name, (stack, rxs, credit) in td.TOPICS.items():
-        topics[name] = {"stack": stack, "count": 0, "credit": credit}
+    for name, (stack, rxs, _credit) in td.TOPICS.items():
+        topics[name] = {"stack": stack, "count": 0, "credit": td.topic_credit(name)}
     compiled = td.COMPILED
     for j in jobs:
         text = f"{j['title']} {j['desc']}"
@@ -288,6 +288,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(insights_payload())
             except Exception as e:
                 self._json({"error": str(e)}, 500)
+        elif u.path == "/api/profile":
+            import job_radar as jr
+            self._json({"ok": True, "name": jr.active_profile().get("name", ""),
+                        "path": str(jr.PROFILE_FILE), "profile": jr.active_profile()})
         else:
             self._json({"error": "unknown endpoint"}, 404)
 
@@ -316,6 +320,36 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/rescore":
             threading.Thread(target=score_now, daemon=True).start()
             self._json({"ok": True})
+
+        elif u.path == "/api/profile":
+            import job_radar as jr
+            data = body.get("profile") or body.get("data")
+            if data is None and isinstance(body.get("text"), str):
+                try:
+                    data = json.loads(body["text"])
+                except json.JSONDecodeError as e:
+                    self._json({"ok": False, "error": f"invalid JSON: {e}"}, 400)
+                    return
+            if not isinstance(data, dict) or not data.get("keywords"):
+                self._json({"ok": False, "error": "profile needs a 'keywords' object"},
+                           400)
+                return
+            path = BASE / "profile.json"
+            path.write_text(json.dumps(data, indent=2, ensure_ascii=False),
+                            encoding="utf-8")
+            jr.load_profile(path, warn=False)
+            cfg = jr.active_profile()
+            tracks = cfg.get("tracks", {})
+            if tracks.get("student"):
+                STATE["config"]["terms_student"] = [str(x) for x in tracks["student"]]
+            if tracks.get("fulltime"):
+                STATE["config"]["terms_fulltime"] = [str(x) for x in tracks["fulltime"]]
+            if isinstance(cfg.get("cities"), list):
+                STATE["config"]["cities"] = [str(x) for x in cfg["cities"]]
+            apply_config(STATE["config"])
+            log(f"profile updated: {cfg.get('name', 'unnamed')} — re-scoring…")
+            threading.Thread(target=score_now, daemon=True).start()
+            self._json({"ok": True, "name": cfg.get("name", "")})
 
         elif u.path == "/api/insights":
             try:

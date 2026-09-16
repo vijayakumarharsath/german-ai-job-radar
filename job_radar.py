@@ -7,7 +7,8 @@ TRACK 2 "fulltime"   : Junior / Graduate / Trainee / entry-level roles (after M.
 
 Sources: Indeed DE + LinkedIn (python-jobspy), StepStone (live, verified),
 Arbeitnow API, browser-saved HTML fallback for Indeed.
-Every JD is scored against Harsath's resume keyword profile.
+Every JD is scored against the ACTIVE profile — edit `profile.json` (or pass
+`--profile`) to score against YOUR resume, search terms and cities.
 
 Usage:
     pip install python-jobspy requests beautifulsoup4 lxml pandas
@@ -26,6 +27,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+import json
 import re
 import sqlite3
 import sys
@@ -131,9 +133,11 @@ CORE_ML_RE = [
 ]
 
 # ----------------- resume vs. market keyword profile -------------------
-# keyword: (weight 3=High/2=Med/1=Low, [regex variants], resume_credit)
-# credit: 1.0 = strong match, 0.25-0.5 = partial, 0.0 = missing from resume
-KEYWORDS = {
+# The ACTIVE profile (./profile.json at runtime, or --profile) drives scoring:
+# keyword weights (3=High/2=Med/1=Low), YOUR level per skill (strong/partial/
+# novice/none), the search terms and the cities. The dict below is the built-in
+# starter profile, used only when no profile file is present or loadable.
+_DEFAULT_KEYWORDS = {
     "Python":                    (3, [r"python"], 1.0),
     "Machine Learning":          (3, [r"machine\s*learning", r"maschinelles?\s*lernen"], 1.0),
     "Deep Learning":             (3, [r"deep\s*learning"], 1.0),
@@ -181,7 +185,54 @@ KEYWORDS = {
     "MATLAB/Simulink":           (2, [r"\bmatlab\b", r"simulink"], 0.0),
     "Digital twin":              (1, [r"digital\s*twin", r"digitalen?\s*zwilling"], 1.0),
 }
+KEYWORDS = dict(_DEFAULT_KEYWORDS)
 COMPILED = {k: [re.compile(v, re.I) for v in variants] for k, (_, variants, _) in KEYWORDS.items()}
+PROFILE_FILE = BASE / "profile.json"
+_ACTIVE_PROFILE: dict = {"name": "built-in starter profile"}
+LEVEL_TO_CREDIT = {"strong": 1.0, "partial": 0.5, "novice": 0.25, "none": 0.0}
+
+
+def load_profile(path: str | Path | None = None, warn: bool = True) -> dict:
+    """Load a profile.json; on success rebuild KEYWORDS/COMPILED plus the search
+    config (terms + cities) from it. Falls back to the built-in starter when the
+    file is missing or invalid, so the pipeline always runs."""
+    global KEYWORDS, COMPILED, SEARCH_TERMS, FULLTIME_TERMS, CITIES, _ACTIVE_PROFILE
+    p = Path(path) if path else PROFILE_FILE
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        if warn:
+            print(f"! can't load profile {p} ({type(e).__name__}: {e})\n"
+                  f"  using the built-in starter profile")
+        return _ACTIVE_PROFILE
+    kw = {}
+    for name, spec in sorted(data.get("keywords", {}).items()):
+        patterns = [str(x) for x in spec.get("patterns", [])]
+        if not patterns:
+            continue
+        kw[name] = (int(spec.get("weight", 2)), patterns,
+                    LEVEL_TO_CREDIT.get(str(spec.get("level", "none")).lower(), 0.0))
+    if kw:
+        KEYWORDS = kw
+        COMPILED = {k: [re.compile(v, re.I) for v in variants]
+                    for k, (_, variants, _) in kw.items()}
+    tracks = data.get("tracks", {})
+    if tracks.get("student"):
+        SEARCH_TERMS = [str(x) for x in tracks["student"]]
+    if tracks.get("fulltime"):
+        FULLTIME_TERMS = [str(x) for x in tracks["fulltime"]]
+    if isinstance(data.get("cities"), list):
+        CITIES = [str(x) for x in data["cities"]]
+    _ACTIVE_PROFILE = data
+    return data
+
+
+load_profile(warn=False)
+
+
+def active_profile() -> dict:
+    """The currently loaded profile (dict as read from profile.json)."""
+    return _ACTIVE_PROFILE
 
 # ----------------------------- helpers ---------------------------------
 
@@ -453,7 +504,7 @@ def write_outputs(scored: list[dict], track: str) -> Path:
         "",
         f"**German demanded:** {ger}/{n} jobs explicitly ask for German.",
         "",
-        "\\* = partial coverage in resume. Full data: `output/jobs_ranked"
+        "\\* = partial coverage in your profile. Full data: `output/jobs_ranked"
         f"{suffix}.csv`",
     ]
     if flagged:
@@ -514,9 +565,13 @@ if __name__ == "__main__":
                     help="fetch full JDs for stored teaser rows, then rescore")
     ap.add_argument("--tracks", default="student,fulltime",
                     help="which tracks to run: student,fulltime")
+    ap.add_argument("--profile", default=None,
+                    help="path to your profile.json (default: ./profile.json)")
     args = ap.parse_args()
     sources = {s.strip().lower() for s in args.sources.split(",") if s.strip()}
     tracks = {t.strip().lower() for t in args.tracks.split(",") if t.strip()}
+    if args.profile:
+        load_profile(args.profile)
 
     con = init_db()
     con.execute("UPDATE jobs SET description='' WHERE LOWER(COALESCE(description,'')) IN ('nan','none')")

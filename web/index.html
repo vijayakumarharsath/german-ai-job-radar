@@ -130,6 +130,10 @@
       <textarea id="terms_student"></textarea>
       <h3 style="margin-top:14px">Junior-track search terms</h3>
       <textarea id="terms_fulltime"></textarea>
+      <h3 style="margin-top:14px">Your profile (resume skills + targets)</h3>
+      <textarea id="profile_json" style="min-height:220px; font-family:Consolas,monospace; font-size:12px"></textarea>
+      <button class="ghost" style="margin-top:8px" onclick="saveProfile()">Save profile &amp; re-score →</button>
+      <div class="hint">Score the radar against <b>your</b> resume: set each skill's level (strong / partial / novice / none), tweak weights &amp; regex patterns, and your search terms + cities. Full schema in the README.</div>
       <button class="go" style="margin-top:16px" onclick="startRun()">Save &amp; Start scraping →</button>
       <div class="hint">StepStone &amp; Arbeitnow work from any IP. Indeed/LinkedIn need a home IP — from cloud boxes they return listings with thin JD text.</div>
     </div>
@@ -266,6 +270,19 @@ async function startRun(){
   go('run');
 }
 
+async function loadProfile(){
+  const r = await (await fetch('/api/profile')).json();
+  if(r.ok){ $('profile_json').value = JSON.stringify(r.profile, null, 2); }
+}
+async function saveProfile(){
+  let data;
+  try{ data = JSON.parse($('profile_json').value); }
+  catch(e){ alert('Profile JSON is invalid: ' + e.message); return; }
+  const r = await (await fetch('/api/profile', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({data})})).json();
+  if(r.ok){ go('run'); poll(true); }
+  else{ alert('Save failed: ' + (r.error || 'unknown error')); }
+}
+
 /* ---------- score ---------- */
 async function refreshKPIs(){
   const st = await (await fetch('/api/state')).json();
@@ -347,7 +364,7 @@ async function loadInsights(){
 }
 
 /* ---------- boot ---------- */
-(async ()=>{ const st = await (await fetch('/api/state')).json(); CFG = st.config; fillConfig(); poll(true); })();
+(async ()=>{ const st = await (await fetch('/api/state')).json(); CFG = st.config; fillConfig(); loadProfile(); poll(true); })();
 </script>
 </body>
 </html>

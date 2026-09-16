@@ -1,16 +1,16 @@
 # 🇩🇪 German AI Job Radar
 
 **I stopped guessing what the German AI job market wants and measured it instead.**
-This tool scrapes ~2,000 live German job listings, extracts the full job descriptions,
+This tool scrapes ~2,700 live German job listings, extracts the full job descriptions,
 scores every relevant AI/ML/Data/Robotics role against a resume keyword profile, and
 mines the corpus for skill-demand statistics.
 
 ![demand chart](docs/demand_chart.png)
 
-> Headline finding (corpus of ~2,000 listings, Sept 2026): **German is demanded
-> explicitly in ~70% of relevant AI student roles with full JD text — and 86% of
-> junior roles.** The fastest-growing skill cluster for AI student roles is
-> agentic AI (agents/tool-calling 13%, LangChain 11%, RAG 9%). Full methodology below.
+> Headline finding (corpus of ~2,700 listings, Sept 2026): **German is demanded
+> explicitly in ~68% of relevant AI roles with full JD text (96 Werkstudent /
+> 13 Junior).** The fastest-growing skill cluster for AI student roles is
+> agentic AI (agents/tool-calling 18%, LangChain 9%, RAG 9%). Full methodology below.
 
 ## What it does
 
@@ -27,14 +27,56 @@ mines the corpus for skill-demand statistics.
 - **Scrapers** — StepStone (plain `requests`, JSON-LD detail parsing), Indeed/LinkedIn
   via [`python-jobspy`](https://github.com/serpapi/python-jobspy), Arbeitnow's free
   API, and a browser-saved-HTML fallback for blocked IPs
-- **Scoring** — every JD is matched against a weighted 43-skill resume profile
+- **Scoring** — every JD is matched against **your** weighted skill profile
   (Strong / Partial / Missing per skill) → per-job fit score + "what's missing for me"
 - **Two tracks** — `student` (Werkstudent/Praktikum) vs `fulltime` (Junior/Graduate),
   classified from titles + entry-level JD signals; senior roles excluded
 - **Topic mining** — 40+ topic demand counts (RAG, vector DBs, ROS 2, edge AI,
-  German…) split by segment and by track
+  German…) split by segment, by track, and aligned to your skill levels
 - **Dual-track employers** — companies hiring both students *and* juniors
   (= Werkstudent → Übernahme pipelines)
+
+## Bring your own resume — `profile.json`
+
+The radar is **not** hard-wired to one candidate. Everything personal lives in a
+single editable file at the project root (the shipped copy is the author's starter —
+edit it or drop in your own):
+
+```jsonc
+{
+  "name": "Your name / label",
+  "about": "notes…",
+  "tracks": {
+    "student":  ["Werkstudent Machine Learning", "Werkstudent AI"],
+    "fulltime": ["Junior Machine Learning Engineer", "Junior Data Scientist"]
+  },
+  "cities": ["Berlin", "München", "Stuttgart"],
+  "keywords": {
+    "Python":     { "weight": 3, "patterns": ["python"],                 "level": "strong" },
+    "PyTorch":    { "weight": 3, "patterns": ["pytorch"],                "level": "novice" },
+    "LangChain/AI agents": {
+      "weight": 2, "patterns": ["langchain", "langgraph", "agentic", "multi-?agent"], "level": "partial" },
+    "German (B1+)": { "weight": 3, "patterns": ["\\bdeutsch\\b(?!land)", "\\bgerman\\b"], "level": "partial" }
+  },
+  "topics": { "RAG / retrieval-augmented": "partial", "ROS / ROS 2": "strong" }
+}
+```
+
+- `keywords.level`: `strong` (1.0 credit) · `partial` (0.5) · `novice` (0.25) · `none` (0) — the fit %
+  is your credit-weighted coverage of what the JD demands
+- `keywords.weight` 3/2/1 = how much a missing/partial skill hurts you in market reports
+- `tracks` + `cities` = what the scrapers search for **you**
+- `topics` = your levels per demand topic → drives the "Your level / Learn-priority" columns
+- `patterns` are treated as regexes; edit until they match how German postings phrase things
+
+Ways to use it:
+```bash
+python job_radar.py                          # uses ./profile.json for scoring + searches
+python job_radar.py --profile my_profile.json
+```
+In the web app (`python app.py`) it's editable live: **Configure → Your profile** textarea
+→ Save & re-score, no restart needed. Clone the repo, point the profile at yourself, and
+the Explore + Market-insights views become *your* ranked shortlist and *your* skill gaps.
 
 ## Quick start
 
@@ -56,6 +98,7 @@ Outputs land in `output/`: ranked CSVs per track, market reports per track,
 
 | File | Purpose |
 |------|---------|
+| `profile.json` | **your** profile: skill levels, weights, search terms, cities (edit me) |
 | `job_radar.py` | main pipeline: scrape → dedup → score → report |
 | `stepstone.py` | StepStone search + JSON-LD detail scraper (verified 2026 markup) |
 | `indeed_direct.py` | Indeed direct requests + saved-HTML parser (Cloudflare-aware) |
