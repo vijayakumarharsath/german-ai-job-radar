@@ -57,7 +57,7 @@ for name in names:
 agent_share = sum(c for n, c, _ in rows if n in agent_cluster)
 sub = f"corpus: {corpus} relevant AI/ML/Data/Robotics JDs with full text  ·  agentic-AI cluster ≈ {round(agent_share / max(corpus, 1) * 100):.0f}% of roles"
 
-fig, ax = plt.subplots(figsize=(10, 6.4), dpi=170)
+fig, ax = plt.subplots(figsize=(10, 6.6), dpi=170)
 bars = ax.barh(names, vals, color=colors, height=0.72)
 for bar, v in zip(bars, vals):
     ax.text(bar.get_width() + 1.2, bar.get_y() + bar.get_height() / 2,
@@ -65,15 +65,16 @@ for bar, v in zip(bars, vals):
 
 ax.set_xlim(0, max(vals) * 1.18)
 ax.set_xlabel("share of relevant JDs mentioning the skill")
-ax.set_title("What German companies demand right now", fontsize=15, pad=12)
-ax.text(0.005, 1.02, sub, transform=ax.transAxes, fontsize=9.5, color="#5f6368")
+fig.text(0.5, 0.988, "What German companies demand right now",
+         ha="center", va="top", fontsize=15, fontweight="bold")
+fig.text(0.5, 0.953, sub, ha="center", va="top", fontsize=9.5, color="#5f6368")
 ax.tick_params(axis="y", labelsize=10)
 ax.spines[["top", "right"]].set_visible(False)
 ax.spines["left"].set_color("#c9ccd1")
 ax.spines["bottom"].set_color("#c9ccd1")
 ax.grid(axis="x", color="#e8eaed", linewidth=0.8)
 ax.set_axisbelow(True)
-fig.tight_layout(rect=(0, 0, 1, 0.95))
+fig.tight_layout(rect=(0, 0, 1, 0.90))
 OUT.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(OUT, facecolor="white")
 print(f"wrote {OUT}  ({OUT.stat().st_size} bytes, corpus={corpus}, bars={n_top})")
